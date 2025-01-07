@@ -1,38 +1,35 @@
-// import { Octokit } from "octokit";
-import { Repo } from "./githubTypes";
-import axios from "axios";
+import { Repo, State, User } from "./githubTypes";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const { Octokit } = require("@octokit/rest");
 export const octokit = new Octokit({
-  auth: "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"
+  auth: process.env.GITHUB_PAT
   ,
   retry: 3,
 });
+ 
 
-// This function will return the repos sorted by stars
-//  TODO: fetch the top rated github repos sorted by start - is there any limit of results we want to bring
-// and then get more id needed? //
-
-//Todo: what is the diff between fetch the top rated by stars and enable sorting by the number of stars (enabling getting repos of x stars?)?
-const getReposSortedByStars = async () => {
+const getReposSortedByStars = async (page:number, state: State) => {
   try {
     const { data } = await octokit.request("GET /search/repositories", {
       q: "stars:>=1",
       sort: "stars",
-      order: "desc",
-      per_page: 10,
+      order: state,
+      per_page: 100,
+      page: page
     });
     const repos = data.items ?? [];
+    console.log(`amount of repos: ${repos.length}`)
     return repos;
-    // const reposData = githubRepoTORepo(repos);
-    // return reposData;
   } catch (e) {
     console.log(e);
     return [];
   }
 };
 
-// This function will return the repos with the amount of stars passed as a parameter
+// didnt use this function
 const getReposOfAmountOfStars = async (amount: number) => {
   try {
     const { data } = await octokit.request("GET /search/repositories", {
@@ -50,7 +47,8 @@ const getReposOfAmountOfStars = async (amount: number) => {
   }
 };
 
-const githubRepoTORepo = (repos:any) => {
+// handling the result for each repo
+const githubRepoTORepo = (repos: any) => {
   let reposData = [];
   try {
     reposData = repos.map((githubRepo:any) => {
@@ -59,8 +57,9 @@ const githubRepoTORepo = (repos:any) => {
         name: githubRepo.name,
         fullName: githubRepo.full_name,
         url: githubRepo.html_url,
-        authorName: { name: "test", email: "test", userName: "test" },
+        authorName: { login: githubRepo.owner.login },
         stars: githubRepo.stargazers_count,
+        isFavorite: false
       };
         return repo;
     });
@@ -96,21 +95,13 @@ const filterReposByAuthor = async (author: string) => {
   }
 };
 
-// const filterReposByLanguage = async (language: string) => {
-//   try {
-//   } catch (e) {
-//     console.log(e);
-//     return []; //TODO-Change to return all the repos
-//   }
-// };
-
 export {
   getReposSortedByStars,
   getReposOfAmountOfStars,
   saveRepoToFavoriteDatabase,
   filterReposByName,
   filterReposByAuthor,
+  githubRepoTORepo
 };
-//https://api.github.com/search/repositories?q=stars:>=1&sort=stars&order=desc
 
-getReposSortedByStars()
+

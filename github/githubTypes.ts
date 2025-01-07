@@ -8,11 +8,12 @@ export interface Repo{
     url: string;
     authorName: User;
     stars: number;
+    isFavorite: boolean;
 }
 
 export interface User{
-    userName: string;
-    name: string;
-    email: string;
+    login: string;
 }
+
+export type State = "desc" | "asc"
 
